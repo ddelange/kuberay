@@ -6,49 +6,61 @@
 set -o errexit
 set -o nounset
 set -o pipefail
+GOPATH=$(go env GOPATH)
+export GOPATH
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
 ROOT_PKG=github.com/ray-project/kuberay/ray-operator
-
-# Grab code-generator version from go.sum
-CODEGEN_VERSION=$(grep 'k8s.io/code-generator' go.sum | awk '{print $2}' | sed 's/\/go.mod//g' | head -1)
-CODEGEN_PKG=$(echo `go env GOPATH`"/pkg/mod/k8s.io/code-generator@${CODEGEN_VERSION}")
+CODEGEN_PKG=$(go list -m -f "{{.Dir}}" k8s.io/code-generator)
 
 if [[ ! -d ${CODEGEN_PKG} ]]; then
     echo "${CODEGEN_PKG} is missing. Running 'go mod download'."
     go mod download
+    CODEGEN_PKG=$(go list -m -f "{{.Dir}}" k8s.io/code-generator)
 fi
 
 echo ">> Using ${CODEGEN_PKG}"
 
-# code-generator does work with go.mod but makes assumptions about
-# the project living in `$GOPATH/src`. To work around this and support
-# any location; create a temporary directory, use this as an output
-# base, and copy everything back once generated.
-TEMP_DIR=$(mktemp -d)
-cleanup() {
-    echo ">> Removing ${TEMP_DIR}"
-#    rm -rf ${TEMP_DIR}
-}
-trap "cleanup" EXIT SIGINT
+cd "${SCRIPT_ROOT}"
 
-echo ">> Temporary output directory ${TEMP_DIR}"
+# Migrate to using kube_codegen.sh once the following issue is fixed:
+# https://github.com/kubernetes/code-generator/issues/165
 
-# Ensure we can execute.
-chmod +x ${CODEGEN_PKG}/generate-groups.sh
+go install "${CODEGEN_PKG}"/cmd/applyconfiguration-gen
+go install "${CODEGEN_PKG}"/cmd/client-gen
+go install "${CODEGEN_PKG}"/cmd/lister-gen
+go install "${CODEGEN_PKG}"/cmd/informer-gen
 
-# generate the code with:
-# --output-base    because this script should also be able to run inside the vendor dir of
-#                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
-#                  instead of the $GOPATH directly. For normal projects this can be dropped.
-#
-cd ${SCRIPT_ROOT}
-${CODEGEN_PKG}/generate-groups.sh "client,informer,lister" \
- github.com/ray-project/kuberay/ray-operator/pkg/client github.com/ray-project/kuberay/ray-operator/api \
- raycluster:v1alpha1 \
- --output-base "${TEMP_DIR}" \
- --go-header-file hack/boilerplate.go.txt
+"${GOPATH}"/bin/applyconfiguration-gen \
+  --input-dirs github.com/ray-project/kuberay/ray-operator/apis/ray/v1 \
+  --external-applyconfigurations k8s.io/api/core/v1.PodTemplateSpec:k8s.io/client-go/applyconfigurations/core/v1 \
+  --output-package github.com/ray-project/kuberay/ray-operator/pkg/client/applyconfiguration \
+  --go-header-file hack/boilerplate.go.txt \
+  --output-base "${SCRIPT_ROOT}" \
+  --trim-path-prefix ${ROOT_PKG}
 
+"${GOPATH}"/bin/client-gen \
+  --input github.com/ray-project/kuberay/ray-operator/apis/ray/v1 \
+  --input-base="" \
+  --apply-configuration-package=github.com/ray-project/kuberay/ray-operator/pkg/client/applyconfiguration \
+  --clientset-name "versioned"  \
+  --output-package github.com/ray-project/kuberay/ray-operator/pkg/client/clientset \
+  --go-header-file hack/boilerplate.go.txt \
+  --output-base "${SCRIPT_ROOT}" \
+  --trim-path-prefix ${ROOT_PKG}
 
-# Copy everything back.
-cp -a "${TEMP_DIR}/${ROOT_PKG}/." "${SCRIPT_ROOT}/"
+"${GOPATH}"/bin/lister-gen \
+  --input-dirs github.com/ray-project/kuberay/ray-operator/apis/ray/v1 \
+  --output-package github.com/ray-project/kuberay/ray-operator/pkg/client/listers \
+  --go-header-file hack/boilerplate.go.txt \
+  --output-base "${SCRIPT_ROOT}" \
+  --trim-path-prefix ${ROOT_PKG}
+
+"${GOPATH}"/bin/informer-gen \
+  --input-dirs github.com/ray-project/kuberay/ray-operator/apis/ray/v1 \
+  --versioned-clientset-package github.com/ray-project/kuberay/ray-operator/pkg/client/clientset/versioned \
+  --listers-package github.com/ray-project/kuberay/ray-operator/pkg/client/listers \
+  --output-package github.com/ray-project/kuberay/ray-operator/pkg/client/informers \
+  --go-header-file hack/boilerplate.go.txt \
+  --output-base "${SCRIPT_ROOT}" \
+  --trim-path-prefix ${ROOT_PKG}

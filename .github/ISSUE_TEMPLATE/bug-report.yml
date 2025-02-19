@@ -1,13 +1,13 @@
 name: Bug report
 title: "[Bug] "
 description: Problems and issues with code of KubeRay
-labels: [bug, triage]
+labels: bug, triage
 body:
   - type: markdown
     attributes:
       value: |
         Thank you for reporting the problem!
-        Please make sure what you are reporting is a bug with reproducible steps. 
+        Please make sure what you are reporting is a bug with reproducible steps.
 
   - type: checkboxes
     attributes:

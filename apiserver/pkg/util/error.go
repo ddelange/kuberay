@@ -3,10 +3,12 @@ package util
 import (
 	"fmt"
 
+	klog "k8s.io/klog/v2"
+
 	"github.com/go-openapi/runtime"
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	k8metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -73,7 +75,8 @@ type UserError struct {
 }
 
 func newUserError(internalError error, externalMessage string,
-	externalStatusCode codes.Code) *UserError {
+	externalStatusCode codes.Code,
+) *UserError {
 	return &UserError{
 		internalError:      internalError,
 		externalMessage:    externalMessage,
@@ -120,7 +123,8 @@ func ExtractErrorForCLI(err error, isDebugMode bool) error {
 }
 
 func NewInternalServerError(err error, internalMessageFormat string,
-	a ...interface{}) *UserError {
+	a ...interface{},
+) *UserError {
 	internalMessage := fmt.Sprintf(internalMessageFormat, a...)
 	return newUserError(
 		errors.Wrapf(err, fmt.Sprintf("InternalServerError: %v", internalMessage)),
@@ -129,7 +133,8 @@ func NewInternalServerError(err error, internalMessageFormat string,
 }
 
 func NewNotFoundError(err error, externalMessageFormat string,
-	a ...interface{}) *UserError {
+	a ...interface{},
+) *UserError {
 	externalMessage := fmt.Sprintf(externalMessageFormat, a...)
 	return newUserError(
 		errors.Wrapf(err, fmt.Sprintf("NotFoundError: %v", externalMessage)),
@@ -215,6 +220,17 @@ func (e *UserError) String() string {
 		e.internalError)
 }
 
+func (e *UserError) ErrorStringWithoutStackTrace() string {
+	return fmt.Sprintf("%v: %v", e.externalMessage, e.internalError)
+}
+
+// GRPCStatus implements `GRPCStatus` to make sure `FromError` in grpc-go can honor the code.
+// Otherwise, it will always return codes.Unknown(2).
+// https://github.com/grpc/grpc-go/blob/2c0949c22d46095edc579d9e66edcd025192b98c/status/status.go#L91-L92
+func (e *UserError) GRPCStatus() *status.Status {
+	return status.New(e.externalStatusCode, e.ErrorStringWithoutStackTrace())
+}
+
 func (e *UserError) wrapf(format string, args ...interface{}) *UserError {
 	return newUserError(errors.Wrapf(e.internalError, format, args...),
 		e.externalMessage, e.externalStatusCode)
@@ -228,9 +244,9 @@ func (e *UserError) wrap(message string) *UserError {
 func (e *UserError) Log() {
 	switch e.externalStatusCode {
 	case codes.Aborted, codes.InvalidArgument, codes.NotFound, codes.Internal:
-		glog.Infof("%+v", e.internalError)
+		klog.Infof("%+v", e.internalError)
 	default:
-		glog.Errorf("%+v", e.internalError)
+		klog.Errorf("%+v", e.internalError)
 	}
 }
 
@@ -266,14 +282,14 @@ func LogError(err error) {
 		e.Log()
 	default:
 		// We log all the details.
-		glog.Errorf("InternalError: %+v", err)
+		klog.Errorf("InternalError: %+v", err)
 	}
 }
 
 // TerminateIfError Check if error is nil. Terminate if not.
 func TerminateIfError(err error) {
 	if err != nil {
-		glog.Fatalf("%v", err)
+		klog.Fatalf("%v", err)
 	}
 }
 

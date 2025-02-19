@@ -1,8 +1,6 @@
 package manager
 
 import (
-	"time"
-
 	"github.com/ray-project/kuberay/apiserver/pkg/client"
 	"github.com/ray-project/kuberay/apiserver/pkg/util"
 	"k8s.io/klog/v2"
@@ -10,6 +8,8 @@ import (
 
 type ClientManagerInterface interface {
 	ClusterClient() client.ClusterClientInterface
+	JobClient() client.JobClientInterface
+	ServiceClient() client.ServiceClientInterface
 	KubernetesClient() client.KubernetesClientInterface
 	Time() util.TimeInterface
 }
@@ -18,6 +18,8 @@ type ClientManagerInterface interface {
 type ClientManager struct {
 	// Kubernetes clients
 	clusterClient    client.ClusterClientInterface
+	jobClient        client.JobClientInterface
+	serviceClient    client.ServiceClientInterface
 	kubernetesClient client.KubernetesClientInterface
 	// auxiliary tools
 	time util.TimeInterface
@@ -25,6 +27,14 @@ type ClientManager struct {
 
 func (c *ClientManager) ClusterClient() client.ClusterClientInterface {
 	return c.clusterClient
+}
+
+func (c *ClientManager) JobClient() client.JobClientInterface {
+	return c.jobClient
+}
+
+func (c *ClientManager) ServiceClient() client.ServiceClientInterface {
+	return c.serviceClient
 }
 
 func (c *ClientManager) KubernetesClient() client.KubernetesClientInterface {
@@ -40,7 +50,6 @@ func (c *ClientManager) init() {
 	klog.Info("Initializing client manager")
 
 	// configure configs
-	initConnectionTimeout := 15 * time.Second
 	defaultKubernetesClientConfig := util.ClientOptions{
 		QPS:   5,
 		Burst: 10,
@@ -51,8 +60,10 @@ func (c *ClientManager) init() {
 
 	// TODO: Potentially, we may need storage layer clients to help persist the data.
 	// 2. kubernetes client initialization
-	c.clusterClient = client.NewRayClusterClientOrFatal(initConnectionTimeout, defaultKubernetesClientConfig)
-	c.kubernetesClient = client.CreateKubernetesCoreOrFatal(initConnectionTimeout, defaultKubernetesClientConfig)
+	c.clusterClient = client.NewRayClusterClientOrFatal(defaultKubernetesClientConfig)
+	c.jobClient = client.NewRayJobClientOrFatal(defaultKubernetesClientConfig)
+	c.serviceClient = client.NewRayServiceClientOrFatal(defaultKubernetesClientConfig)
+	c.kubernetesClient = client.CreateKubernetesCoreOrFatal(defaultKubernetesClientConfig)
 
 	klog.Infof("Client manager initialized successfully")
 }

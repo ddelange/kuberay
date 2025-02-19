@@ -3,15 +3,14 @@ package util
 import (
 	"time"
 
-	"github.com/golang/glog"
+	klog "k8s.io/klog/v2"
 )
 
 type TimeInterface interface {
 	Now() time.Time
 }
 
-type RealTime struct {
-}
+type RealTime struct{}
 
 func NewRealTime() TimeInterface {
 	return &RealTime{}
@@ -45,7 +44,7 @@ func (f *FakeTime) Now() time.Time {
 func ParseTimeOrFatal(value string) time.Time {
 	result, err := time.Parse(time.RFC3339, value)
 	if err != nil {
-		glog.Fatalf("Could not parse time: %+v", err)
+		klog.Fatalf("Could not parse time: %+v", err)
 	}
 	return result.UTC()
 }

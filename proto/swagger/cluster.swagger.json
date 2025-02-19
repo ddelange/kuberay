@@ -19,9 +19,32 @@
     "application/json"
   ],
   "paths": {
-    "/apis/v1alpha1/clusters": {
+    "/apis/v1/clusters": {
       "get": {
-        "summary": "Finds all Clusters. Supports pagination, and sorting on certain fields.",
+        "summary": "Finds all Clusters in all namespaces. Supports pagination, and sorting on certain fields.",
+        "operationId": "ClusterService_ListAllClusters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protoListAllClustersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ClusterService"
+        ]
+      }
+    },
+    "/apis/v1/namespaces/{namespace}/clusters": {
+      "get": {
+        "summary": "Finds all Clusters in a given namespace. Supports pagination, and sorting on certain fields.",
         "operationId": "ClusterService_ListCluster",
         "responses": {
           "200": {
@@ -37,6 +60,15 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "namespace",
+            "description": "Required. The namespace of the clusters to be retrieved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "tags": [
           "ClusterService"
         ]
@@ -60,8 +92,15 @@
         },
         "parameters": [
           {
+            "name": "namespace",
+            "description": "Required. The namespace of the cluster to be created.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
             "name": "body",
-            "description": "The Cluster to be created.",
+            "description": "Required. The cluster to be created.",
             "in": "body",
             "required": true,
             "schema": {
@@ -74,7 +113,7 @@
         ]
       }
     },
-    "/apis/v1alpha1/clusters/{id}": {
+    "/apis/v1/namespaces/{namespace}/clusters/{name}": {
       "get": {
         "summary": "Finds a specific Cluster by ID.",
         "operationId": "ClusterService_GetCluster",
@@ -94,17 +133,17 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "description": "The ID of the Cluster to be retrieved.",
+            "name": "namespace",
+            "description": "Required. The namespace of the cluster to be retrieved.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "name",
-            "description": "The name of the Cluster to be retrieved.",
-            "in": "query",
-            "required": false,
+            "description": "Required. The name of the cluster to be retrieved.",
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -131,17 +170,17 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "description": "The ID of the cluster to be deleted.",
+            "name": "namespace",
+            "description": "The namespace of the cluster to be deleted.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "name",
-            "description": "The name of the Cluster to be retrieved.",
-            "in": "query",
-            "required": false,
+            "description": "The name of the cluster to be deleted.",
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -163,6 +202,56 @@
       "default": "DEV",
       "description": "Optional field."
     },
+    "EnvValueFromSource": {
+      "type": "string",
+      "enum": [
+        "CONFIGMAP",
+        "SECRET",
+        "RESOURCEFIELD",
+        "FIELD"
+      ],
+      "default": "CONFIGMAP",
+      "title": "Source of environment variable"
+    },
+    "VolumeAccessMode": {
+      "type": "string",
+      "enum": [
+        "RWO",
+        "ROX",
+        "RWX"
+      ],
+      "default": "RWO"
+    },
+    "VolumeHostPathType": {
+      "type": "string",
+      "enum": [
+        "DIRECTORY",
+        "FILE"
+      ],
+      "default": "DIRECTORY",
+      "description": "If indicate hostpath, we need to let user indicate which type\nthey would like to use."
+    },
+    "VolumeMountPropagationMode": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "HOSTTOCONTAINER",
+        "BIDIRECTIONAL"
+      ],
+      "default": "NONE"
+    },
+    "VolumeVolumeType": {
+      "type": "string",
+      "enum": [
+        "PERSISTENT_VOLUME_CLAIM",
+        "HOST_PATH",
+        "EPHEMERAL",
+        "CONFIGMAP",
+        "SECRET",
+        "EMPTY_DIR"
+      ],
+      "default": "PERSISTENT_VOLUME_CLAIM"
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -181,20 +270,90 @@
         }
       }
     },
+    "protoAutoscalerOptions": {
+      "type": "object",
+      "properties": {
+        "idleTimeoutSeconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "IdleTimeoutSeconds is the number of seconds to wait before scaling down a worker pod which is not using Ray resources.\nDefaults to 60 (one minute)."
+        },
+        "upscalingMode": {
+          "type": "string",
+          "description": "UpscalingMode is \"Conservative\", \"Default\", or \"Aggressive.\"\nConservative: Upscaling is rate-limited; the number of pending worker pods is at most the size of the Ray cluster.\nDefault: Upscaling is not rate-limited.\nAggressive: An alias for Default; upscaling is not rate-limited.\nIt is not read by the KubeRay operator but by the Ray autoscaler."
+        },
+        "image": {
+          "type": "string",
+          "description": "Image optionally overrides the autoscaler's container image. This override is for provided for autoscaler testing and development."
+        },
+        "imagePullPolicy": {
+          "type": "string",
+          "description": "ImagePullPolicy optionally overrides the autoscaler container's image pull policy. This override is for provided for autoscaler testing and development."
+        },
+        "cpu": {
+          "type": "string",
+          "title": "Optional CPUs requirements for autoscaler - default \"500m\""
+        },
+        "memory": {
+          "type": "string",
+          "title": "Optional memory requirements for autoscaler - default \"512Mi\""
+        },
+        "envs": {
+          "$ref": "#/definitions/protoEnvironmentVariables",
+          "description": "Optional list of environment variables to set in the autoscaler container."
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protoVolume"
+          },
+          "description": "Optional list of volumeMounts.  This is needed for enabling TLS for the autoscaler container."
+        }
+      }
+    },
+    "protoCapabilities": {
+      "type": "object",
+      "properties": {
+        "add": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Optional. Added capabilities"
+        },
+        "drop": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Optional. Removed capabilities"
+        }
+      },
+      "description": "Adds and removes POSIX capabilities from running containers."
+    },
     "protoCluster": {
       "type": "object",
       "properties": {
         "name": {
           "type": "string",
-          "description": "Required input field. Unique Cluster name provided by user."
+          "description": "Required input field. Unique cluster name provided by user.",
+          "required": [
+            "name"
+          ]
         },
         "namespace": {
           "type": "string",
-          "title": "Required input field. Cluster's namespace provided by user"
+          "title": "Required input field. Cluster's namespace provided by user",
+          "required": [
+            "namespace"
+          ]
         },
         "user": {
           "type": "string",
-          "description": "Required field. This field indicates the user who owns the cluster."
+          "description": "Required field. This field indicates the user who owns the cluster.",
+          "required": [
+            "user"
+          ]
         },
         "version": {
           "type": "string",
@@ -207,15 +366,99 @@
           "$ref": "#/definitions/protoClusterSpec",
           "title": "Required field. This field indicates ray cluster configuration"
         },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Optional. Annotations, for example, \"kubernetes.io/ingress.class\" to define Ingress class"
+        },
+        "envs": {
+          "$ref": "#/definitions/protoEnvironmentVariables",
+          "description": "Optional input field. Container environment variables from user."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Output. The time that the Cluster created."
+          "description": "Output. The time that the cluster created.",
+          "readOnly": true
         },
         "deletedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Output. The time that the Cluster deleted."
+          "description": "Output. The time that the cluster deleted.",
+          "readOnly": true
+        },
+        "clusterState": {
+          "type": "string",
+          "title": "Output. The status to show the cluster status.state",
+          "readOnly": true
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protoClusterEvent"
+          },
+          "description": "Output. The list related to the cluster.",
+          "readOnly": true
+        },
+        "serviceEndpoint": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Output. The service endpoint of the cluster",
+          "readOnly": true
+        }
+      },
+      "required": [
+        "name",
+        "namespace",
+        "user"
+      ]
+    },
+    "protoClusterEvent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique Event Id."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human readable name for event."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Event creation time."
+        },
+        "firstTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The first time the event occur."
+        },
+        "lastTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "title": "The last time the event occur"
+        },
+        "reason": {
+          "type": "string",
+          "description": "The reason for the transition into the object's current status."
+        },
+        "message": {
+          "type": "string",
+          "description": "A human-readable description of the status of this operation."
+        },
+        "type": {
+          "type": "string",
+          "title": "Type of this event (Normal, Warning), new types could be added in the future"
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The number of times this event has occurred."
         }
       }
     },
@@ -224,23 +467,69 @@
       "properties": {
         "headGroupSpec": {
           "$ref": "#/definitions/protoHeadGroupSpec",
-          "title": "The head group configuration"
+          "title": "Required. The head group configuration"
         },
-        "workerGroupSepc": {
+        "workerGroupSpec": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/protoWorkerGroupSpec"
           },
-          "title": "The worker group configurations"
+          "title": "Optional. The worker group configurations"
+        },
+        "enableInTreeAutoscaling": {
+          "type": "boolean",
+          "title": "EnableInTreeAutoscaling indicates whether operator should create in tree autoscaling configs"
+        },
+        "autoscalerOptions": {
+          "$ref": "#/definitions/protoAutoscalerOptions",
+          "description": "AutoscalerOptions specifies optional configuration for the Ray autoscaler."
+        }
+      },
+      "description": "Cluster specification."
+    },
+    "protoEnvValueFrom": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/EnvValueFromSource"
+        },
+        "name": {
+          "type": "string",
+          "title": "Name for config map or secret, container name for resource, path for field"
+        },
+        "key": {
+          "type": "string",
+          "title": "Key for config map or secret, resource name for resource"
         }
       }
+    },
+    "protoEnvironmentVariables": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "valuesFrom": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/protoEnvValueFrom"
+          }
+        }
+      },
+      "title": "This allows to specify both - environment variables containing values and environment values containing valueFrom"
     },
     "protoHeadGroupSpec": {
       "type": "object",
       "properties": {
         "computeTemplate": {
           "type": "string",
-          "title": "Optional. The computeTemplate of head node group"
+          "title": "Required. The computeTemplate of head node group",
+          "required": [
+            "compute_template"
+          ]
         },
         "image": {
           "type": "string",
@@ -250,12 +539,78 @@
           "type": "string",
           "title": "Optional. The service type (ClusterIP, NodePort, Load balancer) of the head node"
         },
+        "enableIngress": {
+          "type": "boolean",
+          "title": "Optional. Enable Ingress\nif Ingress is enabled, we might have to specify annotation IngressClassAnnotationKey, for the cluster itself, defining Ingress class"
+        },
         "rayStartParams": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
           },
-          "title": "Optional. The ray start parames of head node group"
+          "description": "Required. The ray start params of head node group.",
+          "required": [
+            "ray_start_params"
+          ]
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protoVolume"
+          },
+          "title": "Optional. The volumes mount to head pod"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "title": "Optional. ServiceAccount used by head pod\nNote that the service account has to be created prior to usage here"
+        },
+        "imagePullSecret": {
+          "type": "string",
+          "title": "Optional. image pull secret used by head pod"
+        },
+        "environment": {
+          "$ref": "#/definitions/protoEnvironmentVariables",
+          "title": "Optional. Environment variables for head pod"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Optional. Annotations for the head pod"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Optional. Labels for the head pod"
+        },
+        "imagePullPolicy": {
+          "type": "string",
+          "title": "Optional image pull policy We only support Always and ifNotPresent"
+        },
+        "securityContext": {
+          "$ref": "#/definitions/protoSecurityContext",
+          "description": "Optional. Configure the security context for the head container for debugging etc."
+        }
+      },
+      "title": "Cluster HeadGroup specification",
+      "required": [
+        "computeTemplate",
+        "rayStartParams"
+      ]
+    },
+    "protoListAllClustersResponse": {
+      "type": "object",
+      "properties": {
+        "clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protoCluster"
+          },
+          "description": "A list of clusters returned.",
+          "readOnly": true
         }
       }
     },
@@ -267,7 +622,64 @@
           "items": {
             "$ref": "#/definitions/protoCluster"
           },
-          "description": "A list of Clusters returned."
+          "description": "A list of clusters returned.",
+          "readOnly": true
+        }
+      }
+    },
+    "protoSecurityContext": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "$ref": "#/definitions/protoCapabilities",
+          "description": "Optional. The capabilities to add/drop when running containers."
+        },
+        "privileged": {
+          "type": "boolean",
+          "description": "Optional. Run container in privileged mode - essentially equivalent to root on the host. Default is false."
+        }
+      },
+      "description": "SecurityContext holds security configuration that will be applied to a container.\nSome fields are present in both SecurityContext and PodSecurityContext.  When both\nare set, the values in SecurityContext take precedence."
+    },
+    "protoVolume": {
+      "type": "object",
+      "properties": {
+        "mountPath": {
+          "type": "string"
+        },
+        "volumeType": {
+          "$ref": "#/definitions/VolumeVolumeType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "hostPathType": {
+          "$ref": "#/definitions/VolumeHostPathType"
+        },
+        "mountPropagationMode": {
+          "$ref": "#/definitions/VolumeMountPropagationMode"
+        },
+        "storageClassName": {
+          "type": "string",
+          "title": "If indicate ephemeral, we need to let user specify volumeClaimTemplate"
+        },
+        "accessMode": {
+          "$ref": "#/definitions/VolumeAccessMode"
+        },
+        "storage": {
+          "type": "string"
+        },
+        "items": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -276,11 +688,17 @@
       "properties": {
         "groupName": {
           "type": "string",
-          "title": "Required. Group name of the current worker group"
+          "title": "Required. Group name of the current worker group",
+          "required": [
+            "group_name"
+          ]
         },
         "computeTemplate": {
           "type": "string",
-          "title": "Optional. The computeTemplate of head node group"
+          "title": "Required. The computeTemplate of head node group",
+          "required": [
+            "compute_template"
+          ]
         },
         "image": {
           "type": "string",
@@ -289,26 +707,83 @@
         "replicas": {
           "type": "integer",
           "format": "int32",
-          "title": "Required. Desired replicas of the worker group"
+          "title": "Required. Desired replicas of the worker group",
+          "required": [
+            "replicas"
+          ]
         },
         "minReplicas": {
           "type": "integer",
           "format": "int32",
-          "title": "Optional. Min replicas of the worker group"
+          "description": "Optional. Min replicas of the worker group, can't be greater than max_replicas."
         },
         "maxReplicas": {
           "type": "integer",
           "format": "int32",
-          "title": "Optional. Max replicas of the worker group"
+          "title": "Required. Max replicas of the worker group (\u003e0)",
+          "required": [
+            "max_replicas"
+          ]
         },
         "rayStartParams": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
           },
-          "title": "Optional. The ray start parames of worker node group"
+          "title": "Required. The ray start parameters of worker node group",
+          "required": [
+            "ray_start_params"
+          ]
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protoVolume"
+          },
+          "title": "Optional. The volumes mount to worker pods"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "title": "Optional. ServiceAccount used by worker pod\nNote that the service account has to be created prior to usage here"
+        },
+        "imagePullSecret": {
+          "type": "string",
+          "title": "Optional. image pull secret used by worker pod"
+        },
+        "environment": {
+          "$ref": "#/definitions/protoEnvironmentVariables",
+          "title": "Optional. Environment variables for worker pod"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Optional. Annotations for the worker pod"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Optional. Labels for the worker pod"
+        },
+        "imagePullPolicy": {
+          "type": "string",
+          "title": "Optional image pull policy We only support Always and ifNotPresent"
+        },
+        "securityContext": {
+          "$ref": "#/definitions/protoSecurityContext",
+          "description": "Optional. Configure the security context for the worker container for debugging etc."
         }
-      }
+      },
+      "required": [
+        "groupName",
+        "computeTemplate",
+        "replicas",
+        "maxReplicas",
+        "rayStartParams"
+      ]
     },
     "protobufAny": {
       "type": "object",

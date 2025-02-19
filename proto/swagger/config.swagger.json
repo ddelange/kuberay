@@ -22,15 +22,15 @@
     "application/json"
   ],
   "paths": {
-    "/apis/v1alpha1/compute_templates": {
+    "/apis/v1/compute_templates": {
       "get": {
-        "summary": "Finds all Clusters. Supports pagination, and sorting on certain fields.",
-        "operationId": "ComputeTemplateService_ListComputeTemplates",
+        "summary": "Finds all compute templates in all namespaces. Supports pagination, and sorting on certain fields.",
+        "operationId": "ComputeTemplateService_ListAllComputeTemplates",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/protoListComputeTemplatesResponse"
+              "$ref": "#/definitions/protoListAllComputeTemplatesResponse"
             }
           },
           "default": {
@@ -40,143 +40,14 @@
             }
           }
         },
-        "tags": [
-          "ComputeTemplateService"
-        ]
-      },
-      "post": {
-        "summary": "Creates a new Cluster.",
-        "operationId": "ComputeTemplateService_CreateComputeTemplate",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protoComputeTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "description": "The ComputeTemplate to be created.",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/protoComputeTemplate"
-            }
-          }
-        ],
         "tags": [
           "ComputeTemplateService"
         ]
       }
     },
-    "/apis/v1alpha1/compute_templates/{id}": {
-      "get": {
-        "summary": "Finds a specific Cluster by ID.",
-        "operationId": "ComputeTemplateService_GetComputeTemplate",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protoComputeTemplate"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "description": "The ID of the ComputeTemplate to be retrieved. reserved field for database layer query later",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "description": "The name of the ComputeTemplate to be retrieved.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComputeTemplateService"
-        ]
-      },
-      "delete": {
-        "summary": "Deletes an Cluster without deleting the Cluster's runs and jobs. To\navoid unexpected behaviors, delete an Cluster's runs and jobs before\ndeleting the Cluster.",
-        "operationId": "ComputeTemplateService_DeleteComputeTemplate",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "description": "The ID of the ComputeTemplate to be deleted.",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "description": "The name of the ComputeTemplate to be deleted.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComputeTemplateService"
-        ]
-      }
-    },
-    "/apis/v1alpha1/image_templates": {
-      "get": {
-        "summary": "Finds all ImageTemplates. Supports pagination, and sorting on certain fields.",
-        "operationId": "ImageTemplateService_ListImageTemplates",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protoListImageTemplatesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "ImageTemplateService"
-        ]
-      },
+    "/apis/v1/image_templates": {
       "post": {
-        "summary": "Creates a new ImageTemplate.",
+        "summary": "Not implemented. Creates a new ImageTemplate.",
         "operationId": "ImageTemplateService_CreateImageTemplate",
         "responses": {
           "200": {
@@ -195,12 +66,19 @@
         "parameters": [
           {
             "name": "body",
-            "description": "The Compute to be created.",
+            "description": "The image template to be created.",
             "in": "body",
             "required": true,
             "schema": {
               "$ref": "#/definitions/protoImageTemplate"
             }
+          },
+          {
+            "name": "namespace",
+            "description": "The namespace of the image template to be created.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -208,9 +86,188 @@
         ]
       }
     },
-    "/apis/v1alpha1/image_templates/{id}": {
+    "/apis/v1/namespaces/{namespace}/compute_templates": {
       "get": {
-        "summary": "Finds a specific ImageTemplate by ID.",
+        "summary": "Finds all compute templates in a given namespace. Supports pagination, and sorting on certain fields.",
+        "operationId": "ComputeTemplateService_ListComputeTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protoListComputeTemplatesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "description": "Required. The namespace of the compute templates to be retrieved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComputeTemplateService"
+        ]
+      },
+      "post": {
+        "summary": "Creates a new compute template.",
+        "operationId": "ComputeTemplateService_CreateComputeTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protoComputeTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "description": "Required. The namespace of the compute template to be created",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "description": "The compute template to be created.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protoComputeTemplate"
+            }
+          }
+        ],
+        "tags": [
+          "ComputeTemplateService"
+        ]
+      }
+    },
+    "/apis/v1/namespaces/{namespace}/compute_templates/{name}": {
+      "get": {
+        "summary": "Finds a specific compute template by its name and namespace.",
+        "operationId": "ComputeTemplateService_GetComputeTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protoComputeTemplate"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "description": "Required. The namespace of the compute template to be retrieved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "description": "Required. The name of the ComputeTemplate to be retrieved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComputeTemplateService"
+        ]
+      },
+      "delete": {
+        "summary": "Deletes a compute template by its name and namespace",
+        "operationId": "ComputeTemplateService_DeleteComputeTemplate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "description": "Required. The namespace of the compute template to be deleted.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "description": "Required. The name of the compute template to be deleted.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComputeTemplateService"
+        ]
+      }
+    },
+    "/apis/v1/namespaces/{namespace}/image_templates": {
+      "get": {
+        "summary": "Not Implemented. Finds all ImageTemplates. Supports pagination, and sorting on certain fields.",
+        "operationId": "ImageTemplateService_ListImageTemplates",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protoListImageTemplatesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "namespace",
+            "description": "The namespace of the image templates to be retrieved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ImageTemplateService"
+        ]
+      }
+    },
+    "/apis/v1/namespaces/{namespace}/image_templates/{name}": {
+      "get": {
+        "summary": "Not implemented. Finds a specific ImageTemplate by ID.",
         "operationId": "ImageTemplateService_GetImageTemplate",
         "responses": {
           "200": {
@@ -228,17 +285,17 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "description": "The ID of the ImageTemplate to be retrieved. reserved field for database layer query later",
+            "name": "namespace",
+            "description": "The namespace of the image template to be retrieved.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "name",
-            "description": "The name of the ImageTemplate to be retrieved.",
-            "in": "query",
-            "required": false,
+            "description": "The name of the image template to be retrieved.",
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -247,7 +304,7 @@
         ]
       },
       "delete": {
-        "summary": "Deletes an ImageTemplate.",
+        "summary": "Not implemented. Deletes an ImageTemplate.",
         "operationId": "ImageTemplateService_DeleteImageTemplate",
         "responses": {
           "200": {
@@ -265,17 +322,17 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "description": "The ID of the ImageTemplate to be deleted.",
+            "name": "namespace",
+            "description": "The namespace of the image template to be deleted.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "name",
-            "description": "The name of the ImageTemplate to be delete.",
-            "in": "query",
-            "required": false,
+            "description": "The name of the image template to be deleted.",
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -307,35 +364,68 @@
     "protoComputeTemplate": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "title": "The ID of the compute template"
-        },
         "name": {
           "type": "string",
-          "title": "The name of the compute template"
+          "title": "Required. The name of the compute template",
+          "required": [
+            "name"
+          ]
+        },
+        "namespace": {
+          "type": "string",
+          "title": "Required. The namespace of the compute template",
+          "required": [
+            "namespace"
+          ]
         },
         "cpu": {
           "type": "integer",
           "format": "int64",
-          "title": "Number of cpus"
+          "title": "Required. Number of cpus",
+          "required": [
+            "cpu"
+          ]
         },
         "memory": {
           "type": "integer",
           "format": "int64",
-          "title": "Number of memory"
+          "title": "Required. Number of memory",
+          "required": [
+            "memory"
+          ]
         },
         "gpu": {
           "type": "integer",
           "format": "int64",
-          "title": "Number of gpus"
+          "title": "Optional. Number of gpus"
         },
         "gpuAccelerator": {
           "type": "string",
-          "title": "The detail gpu accelerator type"
+          "title": "Optional. The detail gpu accelerator type"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protoPodToleration"
+          },
+          "title": "Optional pod tolerations"
+        },
+        "extendedResources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": "Optional. Name and number of the extended resources"
         }
       },
-      "title": "ComputeTemplate can be reused by any compute units like worker group, workspace, image build job, etc"
+      "title": "ComputeTemplate can be reused by any compute units like worker group, workspace, image build job, etc",
+      "required": [
+        "name",
+        "namespace",
+        "cpu",
+        "memory"
+      ]
     },
     "protoImageTemplate": {
       "type": "object",
@@ -343,6 +433,10 @@
         "name": {
           "type": "string",
           "title": "The ID of the image template"
+        },
+        "namespace": {
+          "type": "string",
+          "title": "The namespace of the image template"
         },
         "baseImage": {
           "type": "string",
@@ -387,6 +481,18 @@
       },
       "title": "ImageTemplate can be used by worker group and workspce.\nThey can be distinguish by different entrypoints"
     },
+    "protoListAllComputeTemplatesResponse": {
+      "type": "object",
+      "properties": {
+        "computeTemplates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protoComputeTemplate"
+          },
+          "readOnly": true
+        }
+      }
+    },
     "protoListComputeTemplatesResponse": {
       "type": "object",
       "properties": {
@@ -394,7 +500,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/protoComputeTemplate"
-          }
+          },
+          "readOnly": true
         }
       }
     },
@@ -409,6 +516,42 @@
           "description": "A list of Compute returned."
         }
       }
+    },
+    "protoPodToleration": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "title": "Required. Key created by the node's taint",
+          "required": [
+            "key"
+          ]
+        },
+        "operator": {
+          "type": "string",
+          "title": "Required. Operator to apply",
+          "required": [
+            "operator"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "title": "optional string"
+        },
+        "effect": {
+          "type": "string",
+          "title": "Required. Effect",
+          "required": [
+            "effect"
+          ]
+        }
+      },
+      "title": "Toleration for the compute template",
+      "required": [
+        "key",
+        "operator",
+        "effect"
+      ]
     },
     "protobufAny": {
       "type": "object",

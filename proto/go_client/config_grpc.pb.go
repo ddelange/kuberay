@@ -19,15 +19,15 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ComputeTemplateServiceClient interface {
-	// Creates a new Cluster.
+	// Creates a new compute template.
 	CreateComputeTemplate(ctx context.Context, in *CreateComputeTemplateRequest, opts ...grpc.CallOption) (*ComputeTemplate, error)
-	// Finds a specific Cluster by ID.
+	// Finds a specific compute template by its name and namespace.
 	GetComputeTemplate(ctx context.Context, in *GetComputeTemplateRequest, opts ...grpc.CallOption) (*ComputeTemplate, error)
-	// Finds all Clusters. Supports pagination, and sorting on certain fields.
+	// Finds all compute templates in a given namespace. Supports pagination, and sorting on certain fields.
 	ListComputeTemplates(ctx context.Context, in *ListComputeTemplatesRequest, opts ...grpc.CallOption) (*ListComputeTemplatesResponse, error)
-	// Deletes an Cluster without deleting the Cluster's runs and jobs. To
-	// avoid unexpected behaviors, delete an Cluster's runs and jobs before
-	// deleting the Cluster.
+	// Finds all compute templates in all namespaces. Supports pagination, and sorting on certain fields.
+	ListAllComputeTemplates(ctx context.Context, in *ListAllComputeTemplatesRequest, opts ...grpc.CallOption) (*ListAllComputeTemplatesResponse, error)
+	// Deletes a compute template by its name and namespace
 	DeleteComputeTemplate(ctx context.Context, in *DeleteComputeTemplateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -66,6 +66,15 @@ func (c *computeTemplateServiceClient) ListComputeTemplates(ctx context.Context,
 	return out, nil
 }
 
+func (c *computeTemplateServiceClient) ListAllComputeTemplates(ctx context.Context, in *ListAllComputeTemplatesRequest, opts ...grpc.CallOption) (*ListAllComputeTemplatesResponse, error) {
+	out := new(ListAllComputeTemplatesResponse)
+	err := c.cc.Invoke(ctx, "/proto.ComputeTemplateService/ListAllComputeTemplates", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *computeTemplateServiceClient) DeleteComputeTemplate(ctx context.Context, in *DeleteComputeTemplateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/proto.ComputeTemplateService/DeleteComputeTemplate", in, out, opts...)
@@ -79,15 +88,15 @@ func (c *computeTemplateServiceClient) DeleteComputeTemplate(ctx context.Context
 // All implementations must embed UnimplementedComputeTemplateServiceServer
 // for forward compatibility
 type ComputeTemplateServiceServer interface {
-	// Creates a new Cluster.
+	// Creates a new compute template.
 	CreateComputeTemplate(context.Context, *CreateComputeTemplateRequest) (*ComputeTemplate, error)
-	// Finds a specific Cluster by ID.
+	// Finds a specific compute template by its name and namespace.
 	GetComputeTemplate(context.Context, *GetComputeTemplateRequest) (*ComputeTemplate, error)
-	// Finds all Clusters. Supports pagination, and sorting on certain fields.
+	// Finds all compute templates in a given namespace. Supports pagination, and sorting on certain fields.
 	ListComputeTemplates(context.Context, *ListComputeTemplatesRequest) (*ListComputeTemplatesResponse, error)
-	// Deletes an Cluster without deleting the Cluster's runs and jobs. To
-	// avoid unexpected behaviors, delete an Cluster's runs and jobs before
-	// deleting the Cluster.
+	// Finds all compute templates in all namespaces. Supports pagination, and sorting on certain fields.
+	ListAllComputeTemplates(context.Context, *ListAllComputeTemplatesRequest) (*ListAllComputeTemplatesResponse, error)
+	// Deletes a compute template by its name and namespace
 	DeleteComputeTemplate(context.Context, *DeleteComputeTemplateRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedComputeTemplateServiceServer()
 }
@@ -104,6 +113,9 @@ func (UnimplementedComputeTemplateServiceServer) GetComputeTemplate(context.Cont
 }
 func (UnimplementedComputeTemplateServiceServer) ListComputeTemplates(context.Context, *ListComputeTemplatesRequest) (*ListComputeTemplatesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListComputeTemplates not implemented")
+}
+func (UnimplementedComputeTemplateServiceServer) ListAllComputeTemplates(context.Context, *ListAllComputeTemplatesRequest) (*ListAllComputeTemplatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAllComputeTemplates not implemented")
 }
 func (UnimplementedComputeTemplateServiceServer) DeleteComputeTemplate(context.Context, *DeleteComputeTemplateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteComputeTemplate not implemented")
@@ -176,6 +188,24 @@ func _ComputeTemplateService_ListComputeTemplates_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComputeTemplateService_ListAllComputeTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAllComputeTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComputeTemplateServiceServer).ListAllComputeTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.ComputeTemplateService/ListAllComputeTemplates",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComputeTemplateServiceServer).ListAllComputeTemplates(ctx, req.(*ListAllComputeTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ComputeTemplateService_DeleteComputeTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteComputeTemplateRequest)
 	if err := dec(in); err != nil {
@@ -214,6 +244,10 @@ var ComputeTemplateService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ComputeTemplateService_ListComputeTemplates_Handler,
 		},
 		{
+			MethodName: "ListAllComputeTemplates",
+			Handler:    _ComputeTemplateService_ListAllComputeTemplates_Handler,
+		},
+		{
 			MethodName: "DeleteComputeTemplate",
 			Handler:    _ComputeTemplateService_DeleteComputeTemplate_Handler,
 		},
@@ -226,13 +260,13 @@ var ComputeTemplateService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ImageTemplateServiceClient interface {
-	// Creates a new ImageTemplate.
+	// Not implemented. Creates a new ImageTemplate.
 	CreateImageTemplate(ctx context.Context, in *CreateImageTemplateRequest, opts ...grpc.CallOption) (*ImageTemplate, error)
-	// Finds a specific ImageTemplate by ID.
+	// Not implemented. Finds a specific ImageTemplate by ID.
 	GetImageTemplate(ctx context.Context, in *GetImageTemplateRequest, opts ...grpc.CallOption) (*ImageTemplate, error)
-	// Finds all ImageTemplates. Supports pagination, and sorting on certain fields.
+	// Not Implemented. Finds all ImageTemplates. Supports pagination, and sorting on certain fields.
 	ListImageTemplates(ctx context.Context, in *ListImageTemplatesRequest, opts ...grpc.CallOption) (*ListImageTemplatesResponse, error)
-	// Deletes an ImageTemplate.
+	// Not implemented. Deletes an ImageTemplate.
 	DeleteImageTemplate(ctx context.Context, in *DeleteImageTemplateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -284,13 +318,13 @@ func (c *imageTemplateServiceClient) DeleteImageTemplate(ctx context.Context, in
 // All implementations must embed UnimplementedImageTemplateServiceServer
 // for forward compatibility
 type ImageTemplateServiceServer interface {
-	// Creates a new ImageTemplate.
+	// Not implemented. Creates a new ImageTemplate.
 	CreateImageTemplate(context.Context, *CreateImageTemplateRequest) (*ImageTemplate, error)
-	// Finds a specific ImageTemplate by ID.
+	// Not implemented. Finds a specific ImageTemplate by ID.
 	GetImageTemplate(context.Context, *GetImageTemplateRequest) (*ImageTemplate, error)
-	// Finds all ImageTemplates. Supports pagination, and sorting on certain fields.
+	// Not Implemented. Finds all ImageTemplates. Supports pagination, and sorting on certain fields.
 	ListImageTemplates(context.Context, *ListImageTemplatesRequest) (*ListImageTemplatesResponse, error)
-	// Deletes an ImageTemplate.
+	// Not implemented. Deletes an ImageTemplate.
 	DeleteImageTemplate(context.Context, *DeleteImageTemplateRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedImageTemplateServiceServer()
 }
